@@ -484,11 +484,7 @@ def _com_google_googletest():
 # pull in more bits of abseil as needed, and is now the preferred
 # method for pure Bazel deps.
 def _com_google_absl():
-    # _repository_impl("com_google_absl")
-    native.local_repository(
-      name = "com_google_absl",
-      path = "/home/shimizurei/abseil-cpp",
-    )
+    _repository_impl("com_google_absl")
     native.bind(
         name = "abseil_any",
         actual = "@com_google_absl//absl/types:any",
