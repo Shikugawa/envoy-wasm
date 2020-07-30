@@ -1,6 +1,7 @@
 load("@rules_cc//cc:defs.bzl", "cc_binary")
+load("@io_bazel_rules_rust//rust:rust.bzl", "rust_binary")
 
-def _wasm_transition_impl(settings, attr):
+def _wasm_cc_transition_impl(settings, attr):
     return {
         "//command_line_option:cpu": "wasm32",
         "//command_line_option:crosstool_top": "@proxy_wasm_cpp_sdk//toolchain:emscripten",
@@ -13,8 +14,13 @@ def _wasm_transition_impl(settings, attr):
         "//command_line_option:collect_code_coverage": "false",
     }
 
-wasm_transition = transition(
-    implementation = _wasm_transition_impl,
+def _wasm_rust_transition_impl(settings, attr):
+    return {
+        "//command_line_option:platforms": "@io_bazel_rules_rust//rust/platform:wasm",
+    }
+
+wasm_cc_transition = transition(
+    implementation = _wasm_cc_transition_impl,
     inputs = [],
     outputs = [
         "//command_line_option:cpu",
@@ -23,6 +29,13 @@ wasm_transition = transition(
         "//command_line_option:cxxopt",
         "//command_line_option:linkopt",
         "//command_line_option:collect_code_coverage",
+    ],
+)
+wasm_rust_transition = transition(
+    implementation = _wasm_rust_transition_impl,
+    inputs = [],
+    outputs = [
+        "//command_line_option:platforms",
     ],
 )
 
@@ -39,10 +52,18 @@ def _wasm_binary_impl(ctx):
 # WASM binary rule implementation.
 # This copies the binary specified in binary attribute in WASM configuration to
 # target configuration, so a binary in non-WASM configuration can depend on them.
-wasm_binary = rule(
+wasm_cc_binary_rule = rule(
     implementation = _wasm_binary_impl,
     attrs = {
-        "binary": attr.label(mandatory = True, cfg = wasm_transition),
+        "binary": attr.label(mandatory = True, cfg = wasm_cc_transition),
+        "_whitelist_function_transition": attr.label(default = "@bazel_tools//tools/whitelists/function_transition_whitelist"),
+    },
+)
+
+wasm_rust_binary_rule = rule(
+    implementation = _wasm_binary_impl,
+    attrs = {
+        "binary": attr.label(mandatory = True, cfg = wasm_rust_transition),
         "_whitelist_function_transition": attr.label(default = "@bazel_tools//tools/whitelists/function_transition_whitelist"),
     },
 )
@@ -61,7 +82,30 @@ def wasm_cc_binary(name, **kwargs):
         **kwargs
     )
 
-    wasm_binary(
+    wasm_cc_binary_rule(
         name = name,
         binary = ":" + wasm_name,
+    )
+
+def wasm_rust_binary(name, **kwargs):
+    wasm_name = "_wasm_" + (name if not ".wasm" in name else name.strip(".wasm"))
+    kwargs.setdefault("visibility", ["//visibility:public"])
+    kwargs.setdefault("rustc_flags", ["--edition=2018"])
+
+    rust_binary(
+        name = wasm_name,
+        **kwargs
+    )
+
+    wasm_rust_binary_rule(
+        name = "precompile_" + name,
+        binary = ":" + wasm_name,
+    )
+
+    native.genrule(
+        name = name,
+        srcs = [":precompile_" + name],
+        outs = [name],
+        tools = ["//test/tools/wee8_compile:wee8_compile_tool"],
+        cmd = "$(location //test/tools/wee8_compile:wee8_compile_tool) $(SRCS).runfiles $(OUTS).runfiles",
     )
