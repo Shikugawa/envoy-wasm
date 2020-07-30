@@ -136,6 +136,17 @@ def _go_deps(skip_targets):
         )
         _repository_impl("bazel_gazelle")
 
+def _rust_deps():
+    _repository_impl("io_bazel_rules_rust")
+    _repository_impl(
+        name = "cfg_if",
+        build_file = "@envoy//bazel/external:cfg_if.BUILD",
+    )
+    _repository_impl(
+        name = "log",
+        build_file = "//bazel/external:log.BUILD",
+    )
+
 def envoy_dependencies(skip_targets = []):
     # Setup Envoy developer tools.
     envoy_dev_binding()
@@ -211,6 +222,7 @@ def envoy_dependencies(skip_targets = []):
     _python_deps()
     _cc_deps()
     _go_deps(skip_targets)
+    _rust_deps()
     _kafka_deps()
 
     switched_rules_by_language(

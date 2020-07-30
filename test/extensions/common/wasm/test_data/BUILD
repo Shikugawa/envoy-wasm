@@ -3,18 +3,15 @@ load(
     "envoy_cc_library",
     "envoy_package",
 )
-load("//bazel/wasm:wasm.bzl", "wasm_cc_binary")
+load("//bazel/wasm:wasm.bzl", "wasm_cc_binary", "wasm_rust_binary")
 
 licenses(["notice"])  # Apache 2
 
 envoy_package()
 
-filegroup(
-    name = "modules",
-    srcs = glob(["*.wasm"]),
-    data = [
-        ":test_cpp.wasm",
-    ],
+wasm_rust_binary(
+    name = "test_rust.wasm",
+    srcs = ["test_rust.rs"],
 )
 
 envoy_cc_library(

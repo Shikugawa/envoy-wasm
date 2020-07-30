@@ -511,4 +511,22 @@ DEPENDENCY_REPOSITORIES = dict(
         urls = ["https://github.com/emscripten-core/emsdk/archive/1.39.6.tar.gz"],
         use_category = ["build"],
     ),
+    io_bazel_rules_rust = dict(
+        sha256 = "5ed804fcd10a506a5b8e9e59bc6b3b7f43bc30c87ce4670e6f78df43604894fd",
+        strip_prefix = "rules_rust-fdf9655ba95616e0314b4e0ebab40bb0c5fe005c",
+        urls = ["https://github.com/bazelbuild/rules_rust/archive/fdf9655ba95616e0314b4e0ebab40bb0c5fe005c.tar.gz"],
+        use_category = ["test"],
+    ),
+    cfg_if = dict(
+        sha256 = "2ba2ee0201d67f1e0c00bd31276c4570271ffca1701081a8377fb0400075c4b1",
+        strip_prefix = "cfg-if-0.1.10",
+        urls = ["https://github.com/alexcrichton/cfg-if/archive/0.1.10.zip"],
+        use_category = ["test"],
+    ),
+    log = dict(
+        sha256 = "87bb846f307c1cd82ed385c4e25ae4a3efb2e765d0ac9a077be08caabdbb3392",
+        strip_prefix = "log-0.4.0",
+        urls = ["https://github.com/rust-lang/log/archive/0.4.0.zip"],
+        use_category = ["test"],
+    ),
 )
