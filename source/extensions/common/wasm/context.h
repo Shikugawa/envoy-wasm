@@ -6,6 +6,7 @@
 
 #include "envoy/access_log/access_log.h"
 #include "envoy/buffer/buffer.h"
+#include "envoy/extensions/wasm/v3/wasm.pb.validate.h"
 #include "envoy/http/filter.h"
 #include "envoy/upstream/cluster_manager.h"
 
@@ -40,6 +41,7 @@ using proxy_wasm::WasmResult;
 using proxy_wasm::WasmStreamType;
 using proxy_wasm::Word;
 
+using VmConfig = envoy::extensions::wasm::v3::VmConfig;
 using GrpcService = envoy::config::core::v3::GrpcService;
 
 class Wasm;
@@ -96,12 +98,12 @@ private:
 // Plugin contains the information for a filter/service.
 struct Plugin : public PluginBase {
   Plugin(absl::string_view name, absl::string_view root_id, absl::string_view vm_id,
-         absl::string_view plugin_configuration, bool fail_open,
+         absl::string_view runtime, absl::string_view plugin_configuration, bool fail_open,
          envoy::config::core::v3::TrafficDirection direction,
          const LocalInfo::LocalInfo& local_info,
          const envoy::config::core::v3::Metadata* listener_metadata)
-      : PluginBase(name, root_id, vm_id, plugin_configuration, fail_open), direction_(direction),
-        local_info_(local_info), listener_metadata_(listener_metadata) {}
+      : PluginBase(name, root_id, vm_id, runtime, plugin_configuration, fail_open),
+        direction_(direction), local_info_(local_info), listener_metadata_(listener_metadata) {}
 
   envoy::config::core::v3::TrafficDirection direction_;
   const LocalInfo::LocalInfo& local_info_;
@@ -245,8 +247,7 @@ public:
                       int timeout_millisconds, uint32_t* token_ptr) override;
 
   // Stats/Metrics
-  WasmResult defineMetric(MetricType type, absl::string_view name,
-                          uint32_t* metric_id_ptr) override;
+  WasmResult defineMetric(uint32_t type, absl::string_view name, uint32_t* metric_id_ptr) override;
   WasmResult incrementMetric(uint32_t metric_id, int64_t offset) override;
   WasmResult recordMetric(uint32_t metric_id, uint64_t value) override;
   WasmResult getMetric(uint32_t metric_id, uint64_t* value_ptr) override;

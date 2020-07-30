@@ -44,7 +44,8 @@ public:
   MOCK_METHOD2(log_, void(spdlog::level::level_enum level, absl::string_view message));
 };
 
-static void BM_WasmSimpleCallSpeedTest(benchmark::State& state, std::string test, std::string vm) {
+static void BM_WasmSimpleCallSpeedTest(benchmark::State& state, std::string test,
+                                       std::string runtime) {
   Envoy::Logger::Registry::getLog(Logger::Id::wasm).set_level(spdlog::level::off);
   Stats::IsolatedStoreImpl stats_store;
   Api::ApiPtr api = Api::createApiForTest(stats_store);
@@ -59,13 +60,13 @@ static void BM_WasmSimpleCallSpeedTest(benchmark::State& state, std::string test
   auto vm_key = "";
   auto plugin_configuration = "";
   auto plugin = std::make_shared<Extensions::Common::Wasm::Plugin>(
-      name, root_id, vm_id, plugin_configuration, false,
+      name, root_id, vm_id, runtime, plugin_configuration, false,
       envoy::config::core::v3::TrafficDirection::UNSPECIFIED, local_info, nullptr);
   auto wasm = std::make_unique<Extensions::Common::Wasm::Wasm>(
-      absl::StrCat("envoy.wasm.runtime.", vm), vm_id, vm_configuration, vm_key, scope,
+      absl::StrCat("envoy.wasm.runtime.", runtime), vm_id, vm_configuration, vm_key, scope,
       cluster_manager, *dispatcher);
   std::string code;
-  if (vm == "null") {
+  if (runtime == "null") {
     code = "WasmSpeedCpp";
   } else {
     code = TestEnvironment::readFileToStringForTest(
@@ -85,21 +86,11 @@ static void BM_WasmSimpleCallSpeedTest(benchmark::State& state, std::string test
   }
 }
 
-#if defined(ENVOY_WASM_WAVM)
-#define B(_t)                                                                                      \
-  BENCHMARK_CAPTURE(BM_WasmSimpleCallSpeedTest, V8SpeedTest_##_t, std::string(#_t),                \
-                    std::string("v8"));                                                            \
-  BENCHMARK_CAPTURE(BM_WasmSimpleCallSpeedTest, NullSpeedTest_##_t, std::string(#_t),              \
-                    std::string("null"));                                                          \
-  BENCHMARK_CAPTURE(BM_WasmSimpleCallSpeedTest, WavmSpeedTest_##_t, std::string(#_t),              \
-                    std::string("wavm"));
-#else
 #define B(_t)                                                                                      \
   BENCHMARK_CAPTURE(BM_WasmSimpleCallSpeedTest, V8SpeedTest_##_t, std::string(#_t),                \
                     std::string("v8"));                                                            \
   BENCHMARK_CAPTURE(BM_WasmSimpleCallSpeedTest, NullSpeedTest_##_t, std::string(#_t),              \
                     std::string("null"));
-#endif
 
 B(empty)
 B(get_current_time)
